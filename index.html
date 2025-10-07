@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Grocery Dashboard — Phase 1</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>🥦 Smart Grocery Dashboard (Phase 1)</h1>
+    <p>Upload your Instacart grocery list (CSV) to preview items instantly.</p>
+
+    <form id="upload-form">
+      <input type="file" id="csvFile" accept=".csv" required />
+      <button type="submit">Upload & Preview</button>
+    </form>
+
+    <section id="output" style="margin-top:2rem;">
+      <h3>🛒 Grocery List</h3>
+      <table id="table" role="grid"></table>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const table = document.getElementById("table");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const file = document.getElementById("csvFile").files[0];
+      if (!file) return alert("Please choose a CSV file first.");
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+          const data = results.data;
+          renderTable(data);
+        },
+      });
+    });
+
+    function renderTable(data) {
+      if (!data.length) return (table.innerHTML = "<tr><td>No data found.</td></tr>");
+      const headers = Object.keys(data[0]);
+      let html = "<thead><tr>";
+      headers.forEach((h) => (html += `<th>${h}</th>`));
+      html += "</tr></thead><tbody>";
+      data.forEach((row) => {
+        html += "<tr>";
+        headers.forEach((h) => (html += `<td>${row[h]}</td>`));
+        html += "</tr>";
+      });
+      html += "</tbody>";
+      table.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
