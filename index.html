@@ -3,33 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Smart Grocery Dashboard — Phase 2</title>
+  <title>Smart Grocery Dashboard — Phase 1</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <main class="container">
-    <h1>🥦 Smart Grocery Dashboard (Phase 2)</h1>
-    <p>Upload your Instacart grocery list (CSV) — now with live nutrition data!</p>
+    <h1>🥦 Smart Grocery Dashboard (Phase 1)</h1>
+    <p>Upload your Instacart grocery list (CSV) to preview items instantly.</p>
 
     <form id="upload-form">
       <input type="file" id="csvFile" accept=".csv" required />
-      <button type="submit">Upload & Analyze</button>
+      <button type="submit">Upload & Preview</button>
     </form>
 
     <section id="output" style="margin-top:2rem;">
-      <h3>🛒 Grocery List + Nutrition</h3>
+      <h3>🛒 Grocery List</h3>
       <table id="table" role="grid"></table>
     </section>
   </main>
 
   <script>
-    const APP_ID = "YOUR_APP_ID"; // 8ebf3b28
-    const APP_KEY = "YOUR_APP_KEY"; // 0c50e9b7dc675df49229d2a50a92390d
     const form = document.getElementById("upload-form");
     const table = document.getElementById("table");
 
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
       const file = document.getElementById("csvFile").files[0];
       if (!file) return alert("Please choose a CSV file first.");
@@ -37,48 +35,18 @@
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: async function (results) {
-          const groceries = results.data;
-          await fetchNutritionData(groceries);
-        },
+        complete: (results) => renderTable(results.data),
       });
     });
 
-    async function fetchNutritionData(items) {
-      table.innerHTML = "<tr><th>Item</th><th>Quantity</th><th>Calories</th><th>Protein (g)</th><th>Carbs (g)</th><th>Fat (g)</th></tr>";
-      for (const item of items) {
-        const food = item.item;
-        const quantity = item.quantity || 1;
-
-        try {
-          const res = await fetch("https://trackapi.nutritionix.com/v2/natural/nutrients", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-app-id": APP_ID,
-              "x-app-key": APP_KEY,
-            },
-            body: JSON.stringify({ query: food }),
-          });
-
-          const data = await res.json();
-          const foodItem = data.foods[0];
-          const row = `
-            <tr>
-              <td>${food}</td>
-              <td>${quantity}</td>
-              <td>${foodItem.nf_calories.toFixed(0)}</td>
-              <td>${foodItem.nf_protein.toFixed(1)}</td>
-              <td>${foodItem.nf_total_carbohydrate.toFixed(1)}</td>
-              <td>${foodItem.nf_total_fat.toFixed(1)}</td>
-            </tr>
-          `;
-          table.innerHTML += row;
-        } catch (err) {
-          console.error(err);
-          table.innerHTML += `<tr><td>${food}</td><td>${quantity}</td><td colspan="4">Error fetching data</td></tr>`;
-        }
-      }
+    function renderTable(data) {
+      if (!data.length) return (table.innerHTML = "<tr><td>No data found.</td></tr>");
+      const headers = Object.keys(data[0]);
+      let html = "<thead><tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr></thead><tbody>";
+      data.forEach(row => {
+        html += "<tr>" + headers.map(h => `<td>${row[h]}</td>`).join("") + "</tr>";
+      });
+      table.innerHTML = html + "</tbody>";
     }
   </script>
 </body>
